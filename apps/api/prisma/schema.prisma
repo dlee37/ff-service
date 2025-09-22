@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id String @id @default(uuid())
+  name String @unique
+  createdAt DateTime @default(now())
+  environments Environment[]
+  flags Flag[]
+}
+
+model Environment {
+  id String @id @default(uuid())
+  key String
+  project Project @relation(fields: [projectId], references: [id])
+  projectId String
+  createdAt DateTime @default(now())
+  @@unique([projectId, key])
+}
+
+model Flag {
+  id String @id @default(uuid())
+  key String
+  name String
+  description String?
+  project Project @relation(fields: [projectId], references: [id])
+  projectId String
+  rules FlagRule[]
+  variants FlagVariant[]
+  createdAt DateTime @default(now())
+  @@unique([projectId, key])
+}
+
+model FlagVariant {
+  id String @id @default(uuid())
+  flag Flag @relation(fields: [flagId], references: [id])
+  flagId String
+  key String
+  weight Int
+  payload Json?
+  @@unique([flagId, key])
+}
+
+model FlagRule {
+  id String @id @default(uuid())
+  flag Flag @relation(fields: [flagId], references: [id])
+  flagId String
+  // Simple clause string for now (e.g. "country==US && plan==pro")
+  // You can normalize into tables later.
+  clause String
+  priority Int
+}
